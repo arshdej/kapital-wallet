@@ -1,0 +1,13 @@
+{
+    "name": "kapital",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "web": "pnpm --filter web dev",
+        "test:all": "pnpm -r test"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}

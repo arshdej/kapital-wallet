@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+  - "web"
+  - "web-extension"
+  - "mobile-app"
+  - "utils"
+  - "desktop"
+  - "cli"
+  - "backend"

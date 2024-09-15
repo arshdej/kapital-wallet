@@ -1,0 +1,21 @@
+{
+    "name": "@kapital/utils",
+    "version": "0.0.1",
+    "main": "src/index.ts",
+    "scripts": {
+        "test": "vitest run"
+    },
+    "devDependencies": {
+        "typescript": "^5.5.3",
+        "vitest": "^2.0.5"
+    },
+    "dependencies": {
+        "@reduxjs/toolkit": "^2.2.7",
+        "@tbdex/http-client": "1.1.0",
+        "@web5/api": "0.10.0",
+        "@web5/credentials": "1.0.3",
+        "@web5/dids": "1.1.2",
+        "crypto-js": "^4.2.0",
+        "react-redux": "^9.1.2"
+    }
+}

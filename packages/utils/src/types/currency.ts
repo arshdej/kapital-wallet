@@ -1,0 +1,16 @@
+export type Currency =
+  | "NGN"
+  | "GHS"
+  | "KES"
+  | "ZAR"
+  | "MAD"
+  | "EGP"
+  | "USD"
+  | "EUR"
+  | "CAD"
+  | "GBP"
+  | "JPY"
+  | "USDC"
+  | "BTC"
+  | "MXN"
+  | "AUD";
