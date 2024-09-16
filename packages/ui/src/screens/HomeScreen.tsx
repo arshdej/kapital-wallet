@@ -84,6 +84,7 @@ const HomeScreen: React.FC = () => {
       : (pairCurrencies[0] as Currency),
     baseAmount: 0,
     pairAmount: 0,
+    currencyRoute: [] as string[],
   });
 
   const baseCurrency = sendPayload.baseCurrency;
@@ -181,8 +182,13 @@ const HomeScreen: React.FC = () => {
     dispatch(lockAccount());
   };
 
-  const handleOfferingSelect = async (offerings: Offering[]) => {
+  const handleOfferingSelect = async (
+    offerings: Offering[],
+    currencyRoute: string[]
+  ) => {
+    console.log({ offerings });
     setSelectedOffering(offerings);
+    setSendPayload({ currencyRoute: currencyRoute || [] });
     const requiredCredentials = offerings.flatMap(
       (offering) =>
         offering.data.requiredClaims?.input_descriptors?.map((desc) => ({
@@ -223,7 +229,7 @@ const HomeScreen: React.FC = () => {
     // Implement exchange logic here
     toast({
       title: "Exchange Successful",
-      description: `Exchanged ${amount} ${baseCurrency} to ${pairCurrency} using ${selectedOffering?.provider}`,
+      description: `Exchanged ${amount} ${baseCurrency} to ${pairCurrency}`,
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -473,6 +479,7 @@ const HomeScreen: React.FC = () => {
         customerDid={account.getConnectedDid()}
         web5={account.getWeb5()}
         verifiableCredentials={selectedCredentials}
+        currencyRoute={sendPayload.currencyRoute || []}
       />
 
       {/* Transaction Drawer */}

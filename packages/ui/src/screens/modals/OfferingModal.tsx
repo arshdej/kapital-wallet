@@ -1,8 +1,10 @@
 import {
   Box,
   Button,
+  Divider,
   FormControl,
   FormLabel,
+  HStack,
   Input,
   Modal,
   ModalBody,
@@ -11,6 +13,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Progress,
   Select,
   Text,
   useToast,
@@ -32,6 +35,7 @@ interface OfferingModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedOfferings: Offering[];
+  currencyRoute: string[];
   baseAmount: number;
   baseCurrency: string;
   pairCurrency: string;
@@ -52,6 +56,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
   baseAmount,
   baseCurrency,
   pairCurrency,
+  currencyRoute,
   onExchangeComplete,
   customerDid,
   web5,
@@ -111,7 +116,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
   };
 
   const createRfq = async () => {
-    const rfq = Rfq.create({
+    const payload = {
       metadata: {
         to: currentOffering.metadata.from,
         from: customerDid.uri,
@@ -128,13 +133,17 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
           kind: selectedPayoutMethod,
           paymentDetails: payoutDetails,
         },
-        claims: verifiableCredentials.filter((vc) =>
-          currentOffering.data.requiredClaims?.input_descriptors?.some(
-            (desc) => desc.schema === vc.schema && desc.issuer === vc.issuer
+        claims: verifiableCredentials
+          .filter((vc) =>
+            currentOffering.data.requiredClaims?.input_descriptors?.some(
+              (desc) => desc.id === vc.id
+              // (desc) => desc.schema === vc.schema && desc.issuer === vc.issuer
+            )
           )
-        ),
+          .map((c) => c.jwt),
       },
-    });
+    };
+    const rfq = Rfq.create(payload);
 
     try {
       rfq.verifyOfferingRequirements(currentOffering);
@@ -152,6 +161,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
     try {
       const rfq = await createRfq();
       const exchange = await TbdexHttpClient.createExchange(rfq);
+      console.log({ exchange });
       setExchangeId(exchange.id);
 
       // Poll for quote
@@ -286,9 +296,12 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
       }
 
       if (closeMessage.data.success) {
+        setStep("close");
         toast({
-          title: "Exchange Complete",
-          description: "Your exchange has been successfully processed.",
+          title: "Exchange Step Complete",
+          description: `Successfully exchanged ${
+            currencyRoute[currentOfferingIndex]
+          } to ${currencyRoute[currentOfferingIndex + 1]}.`,
           status: "success",
           duration: 5000,
           isClosable: true,
@@ -303,7 +316,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
         }
       } else {
         toast({
-          title: "Exchange Failed",
+          title: "Exchange Step Failed",
           description: `Reason: ${closeMessage.data.reason}`,
           status: "error",
           duration: 5000,
@@ -329,24 +342,57 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          Exchange Currency - Step {currentOfferingIndex + 1}/
+          Currency Exchange - Step {currentOfferingIndex + 1}/
           {selectedOfferings.length}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="stretch">
+            <Box>
+              <Text fontWeight="bold">Overall Progress</Text>
+              <HStack>
+                {currencyRoute.map((currency, index) => (
+                  <React.Fragment key={currency}>
+                    <Text
+                      color={
+                        index <= currentOfferingIndex ? "blue.500" : "gray.500"
+                      }
+                      fontWeight={
+                        index === currentOfferingIndex ? "bold" : "normal"
+                      }
+                    >
+                      {currency}
+                    </Text>
+                    {index < currencyRoute.length - 1 && <Text>→</Text>}
+                  </React.Fragment>
+                ))}
+              </HStack>
+              <Progress
+                value={
+                  (currentOfferingIndex / (selectedOfferings.length - 1)) * 100
+                }
+              />
+            </Box>
+            <Divider />
+
             {step === "input" && (
               <>
                 <FormControl>
-                  <FormLabel>Amount to Exchange</FormLabel>
+                  <FormLabel>
+                    Amount of {currencyRoute[currentOfferingIndex]} to Exchange
+                  </FormLabel>
                   <Input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
+                    isReadOnly={currentOfferingIndex > 0}
                   />
                 </FormControl>
                 <FormControl>
-                  <FormLabel>Payin Method</FormLabel>
+                  <FormLabel>
+                    Payin Method (How you'll send{" "}
+                    {currencyRoute[currentOfferingIndex]})
+                  </FormLabel>
                   <Select
                     value={selectedPayinMethod}
                     onChange={(e) =>
@@ -389,7 +435,10 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
                     </Box>
                   )}
                 <FormControl>
-                  <FormLabel>Payout Method</FormLabel>
+                  <FormLabel>
+                    Payout Method (How you'll receive{" "}
+                    {currencyRoute[currentOfferingIndex + 1]})
+                  </FormLabel>
                   <Select
                     value={selectedPayoutMethod}
                     onChange={(e) =>
@@ -437,24 +486,38 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
               <Box>
                 <Text fontWeight="bold">Quote Details</Text>
                 <Text>
-                  Payin Amount: {quote.data.payinAmount}{" "}
-                  {quote.data.payinCurrency}
+                  You'll send: {quote.data.payinAmount}{" "}
+                  {currencyRoute[currentOfferingIndex]}
                 </Text>
                 <Text>
-                  Payout Amount: {quote.data.payoutAmount}{" "}
-                  {quote.data.payoutCurrency}
+                  You'll receive: {quote.data.payoutAmount}{" "}
+                  {currencyRoute[currentOfferingIndex + 1]}
                 </Text>
                 <Text>
-                  Fee: {quote.data.fee} {quote.data.payinCurrency}
+                  Fee: {quote.data.fee} {currencyRoute[currentOfferingIndex]}
+                </Text>
+                <Text>
+                  Exchange rate: 1 {currencyRoute[currentOfferingIndex]} ={" "}
+                  {Number(quote.data.payoutAmount) /
+                    Number(quote.data.payinAmount)}{" "}
+                  {currencyRoute[currentOfferingIndex + 1]}
                 </Text>
               </Box>
             )}
             {step === "order" && (
-              <Text>Order placed. Waiting for confirmation...</Text>
+              <Text>
+                Order placed for {currencyRoute[currentOfferingIndex]} to{" "}
+                {currencyRoute[currentOfferingIndex + 1]} exchange. Waiting for
+                confirmation...
+              </Text>
             )}
             {step === "close" && (
               <Text>
-                Exchange completed. Proceeding to next step or closing.
+                {currentOfferingIndex < selectedOfferings.length - 1
+                  ? `Exchange from ${currencyRoute[currentOfferingIndex]} to ${
+                      currencyRoute[currentOfferingIndex + 1]
+                    } completed. Proceeding to next step.`
+                  : "All exchanges completed successfully. You can now close this window."}
               </Text>
             )}
           </VStack>
@@ -466,7 +529,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
               onClick={handleRequestQuote}
               isLoading={isLoading}
             >
-              Request Quote
+              Get Quote
             </Button>
           )}
           {step === "quote" && (
@@ -475,7 +538,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
               onClick={handlePlaceOrder}
               isLoading={isLoading}
             >
-              Place Order
+              Confirm and Place Order
             </Button>
           )}
         </ModalFooter>

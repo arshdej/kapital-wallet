@@ -25,7 +25,8 @@ const OfferingCard: React.FC<
   ConversionPath & {
     baseAmount?: number;
     pairAmount?: number;
-    handleOfferingSelect: (offr: Offering[]) => void;
+    path?: string[];
+    handleOfferingSelect: (offr: Offering[], currencyRoute: string[]) => void;
   }
 > = ({
   path,
@@ -172,7 +173,7 @@ const OfferingCard: React.FC<
             colorScheme="blue"
             size="md"
             width="auto"
-            onClick={() => handleOfferingSelect(offerings)}
+            onClick={() => handleOfferingSelect(offerings, path)}
             _hover={{ bg: "blue.600", boxShadow: "lg" }}
           >
             Select Offering
@@ -187,7 +188,7 @@ const OfferingsDisplay: React.FC<{
   conversionPaths: ConversionPath[];
   baseAmount?: number;
   pairAmount?: number;
-  handleOfferingSelect: (offr: Offering[]) => void;
+  handleOfferingSelect: (offr: Offering[], currencyRoute: string[]) => void;
 }> = ({ conversionPaths, baseAmount, pairAmount, handleOfferingSelect }) => {
   return (
     <VStack spacing={6} align="stretch">
