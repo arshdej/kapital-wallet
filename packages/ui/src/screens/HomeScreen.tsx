@@ -53,6 +53,7 @@ import UnlockScreen from "./UnlockScreen";
 import CredentialDrawer from "./drawers/CredentialDrawer";
 import CredentialModal, { Credential } from "./modals/CredentialModal";
 import OfferingModal from "./modals/OfferingModal";
+import QuoteModal from "./modals/QuoteModal";
 
 interface Transaction {
   id: number;
@@ -106,6 +107,13 @@ const HomeScreen: React.FC = () => {
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastOfferingElementRef = useRef<HTMLTableRowElement | null>(null);
+
+  const [selectedExchange, setSelectedExchange] = useState(null);
+  const {
+    isOpen: isQuoteModalOpen,
+    onOpen: openQuoteModal,
+    onClose: closeQuoteModal,
+  } = useDisclosure();
 
   const {
     isOpen: isOfferingModalOpen,
@@ -256,13 +264,17 @@ const HomeScreen: React.FC = () => {
   const handleContinueExchange = (exchangeData: any) => {
     console.log("Continuing exchange:", exchangeData);
     // TODO: Launch the order step instead
-    handleOfferingSelect(
-      [exchangeData.offering],
-      [
-        exchangeData?.offering?.data?.payin?.currencyCode,
-        exchangeData?.offering?.data?.payout?.currencyCode,
-      ]
-    );
+    // handleOfferingSelect(
+    //   [exchangeData.offering],
+    //   [
+    //     exchangeData?.offering?.data?.payin?.currencyCode,
+    //     exchangeData?.offering?.data?.payout?.currencyCode,
+    //   ]
+    // );
+    setSelectedExchange(exchangeData);
+    if (exchangeData.status === "quoted") {
+      openQuoteModal();
+    }
   };
 
   if (!account) {
@@ -515,6 +527,15 @@ const HomeScreen: React.FC = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      <QuoteModal
+        isOpen={isQuoteModalOpen}
+        onClose={closeQuoteModal}
+        exchange={selectedExchange}
+        customerDid={account.getConnectedDid()}
+        web5={account.getWeb5()}
+        onExchangeComplete={handleExchangeComplete}
+      />
     </Box>
   );
 };
