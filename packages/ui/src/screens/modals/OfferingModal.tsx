@@ -162,7 +162,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
       const rfq = await createRfq();
       const exchange = await TbdexHttpClient.createExchange(rfq);
       console.log({ exchange });
-      setExchangeId(exchange.id);
+      setExchangeId(rfq.exchangeId);
 
       // Poll for quote
       let attempts = 0;
@@ -172,21 +172,20 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
 
       while (!receivedQuote && attempts < maxAttempts) {
         const updatedExchange = await TbdexHttpClient.getExchange({
-          exchangeId: exchange.id,
+          exchangeId: rfq.exchangeId,
           pfiDid: currentOffering.metadata.from,
           did: customerDid,
         });
 
-        receivedQuote = updatedExchange.messages.find(
+        receivedQuote = updatedExchange.find(
           (m) => m instanceof Quote
         ) as Quote;
 
         if (!receivedQuote) {
-          const close = updatedExchange.messages.find(
-            (m) => m instanceof Close
-          );
+          const close = updatedExchange.find((m) => m instanceof Close);
           if (close) {
-            throw new Error("Exchange closed by PFI");
+            // throw new Error("Exchange closed by PFI");
+            break;
           }
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
@@ -196,14 +195,14 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
       if (!receivedQuote) {
         throw new Error("Failed to receive quote");
       }
-
+      console.log({ receivedQuote });
       setQuote(receivedQuote);
       setStep("quote");
 
       // Store exchange data in user's DWN
       await web5.dwn.records.create({
         data: JSON.stringify({
-          exchangeId: exchange.id,
+          exchangeId: rfq.exchangeId,
           offering: currentOffering,
           rfq: rfq,
           quote: receivedQuote,
@@ -218,7 +217,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
       console.error("Error requesting quote:", error);
       toast({
         title: "Error",
-        description: "Failed to request quote. Please try again.",
+        description: `Failed to request quote. ${String(error)}`,
         status: "error",
         duration: 5000,
         isClosable: true,
