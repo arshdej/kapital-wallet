@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Divider,
@@ -15,10 +16,22 @@ import {
   ModalOverlay,
   Progress,
   Select,
+  Stat,
+  StatArrow,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
   Text,
+  Tooltip,
   useToast,
   VStack,
 } from "@chakra-ui/react";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateToMonthDay,
+  formatExchangeRate,
+} from "@kapital/utils/src/helpers/formatter";
 import {
   Close,
   DID,
@@ -30,7 +43,7 @@ import {
 } from "@tbdex/http-client";
 import { Web5 } from "@web5/api/browser";
 import React, { useEffect, useState } from "react";
-
+import { InfoIcon } from "../../components/Icons";
 interface OfferingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -256,8 +269,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
           pfiDid: currentOffering.metadata.from,
           did: customerDid,
         });
-
-        closeMessage = updatedExchange.messages.find(
+        closeMessage = updatedExchange?.find?.(
           (m) => m instanceof Close
         ) as Close;
 
@@ -307,7 +319,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
         });
         if (currentOfferingIndex < selectedOfferings.length - 1) {
           setCurrentOfferingIndex((prev) => prev + 1);
-          setAmount(Number(quote!.data.payoutAmount));
+          setAmount(Number(quote!.data.payout?.amount));
           setStep("input");
         } else {
           onExchangeComplete();
@@ -482,25 +494,94 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
               </>
             )}
             {step === "quote" && quote && (
-              <Box>
-                <Text fontWeight="bold">Quote Details</Text>
-                <Text>
-                  You'll send: {quote.data.payinAmount}{" "}
-                  {currencyRoute[currentOfferingIndex]}
-                </Text>
-                <Text>
-                  You'll receive: {quote.data.payoutAmount}{" "}
-                  {currencyRoute[currentOfferingIndex + 1]}
-                </Text>
-                <Text>
-                  Fee: {quote.data.fee} {currencyRoute[currentOfferingIndex]}
-                </Text>
-                <Text>
-                  Exchange rate: 1 {currencyRoute[currentOfferingIndex]} ={" "}
-                  {Number(quote.data.payoutAmount) /
-                    Number(quote.data.payinAmount)}{" "}
-                  {currencyRoute[currentOfferingIndex + 1]}
-                </Text>
+              <Box borderWidth="1px" borderRadius="lg" p={4}>
+                <VStack spacing={4} align="stretch">
+                  <Text fontSize="xl" fontWeight="bold">
+                    Quote Details
+                  </Text>
+
+                  <HStack justify="space-between">
+                    <Stat>
+                      <StatLabel>You'll Send</StatLabel>
+                      <StatNumber>
+                        {formatCurrency(
+                          quote.data.payin?.amount,
+                          currencyRoute[currentOfferingIndex]
+                        )}
+                      </StatNumber>
+                      <StatHelpText>
+                        {currencyRoute[currentOfferingIndex]}
+                      </StatHelpText>
+                    </Stat>
+                    <Stat>
+                      <StatArrow type="increase" />
+                    </Stat>
+                    <Stat>
+                      <StatLabel>You'll Receive</StatLabel>
+                      <StatNumber>
+                        {formatCurrency(
+                          quote.data.payout?.amount,
+                          currencyRoute[currentOfferingIndex + 1]
+                        )}
+                      </StatNumber>
+                      <StatHelpText>
+                        {currencyRoute[currentOfferingIndex + 1]}
+                      </StatHelpText>
+                    </Stat>
+                  </HStack>
+
+                  <Divider />
+
+                  <HStack justify="space-between">
+                    <Box>
+                      <Text fontWeight="semibold">Exchange Rate</Text>
+                      <Text>
+                        1 {currencyRoute[currentOfferingIndex]} ={" "}
+                        {formatExchangeRate(
+                          Number(quote.data.payout.amount) /
+                            Number(quote.data.payin?.amount)
+                        )}{" "}
+                        {currencyRoute[currentOfferingIndex + 1]}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="semibold">Fee</Text>
+                      <Text>
+                        {formatCurrency(
+                          quote.data.fee ?? 0,
+                          currencyRoute[currentOfferingIndex]
+                        )}
+                      </Text>
+                    </Box>
+                  </HStack>
+
+                  <Divider />
+
+                  <HStack justify="space-between">
+                    <Text fontWeight="semibold">Quote Expires On</Text>
+                    <Tooltip
+                      label={formatDate(quote.data.expiresAt)}
+                      placement="top"
+                    >
+                      <Badge colorScheme="blue">
+                        {
+                          formatDateToMonthDay(new Date(quote.data.expiresAt))
+                            .datetime
+                        }
+                      </Badge>
+                    </Tooltip>
+                  </HStack>
+
+                  <Box bg="gray.100" p={2} borderRadius="md">
+                    <HStack>
+                      <InfoIcon color="blue.500" />
+                      <Text fontSize="sm">
+                        This quote is valid for a limited time. Please confirm
+                        your order before it expires.
+                      </Text>
+                    </HStack>
+                  </Box>
+                </VStack>
               </Box>
             )}
             {step === "order" && (

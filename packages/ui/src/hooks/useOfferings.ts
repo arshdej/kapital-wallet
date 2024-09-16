@@ -552,7 +552,6 @@ export default function useOfferings() {
           return pWithOfferings;
         })
       );
-      console.log({ offerings });
       return offerings;
     },
     []
