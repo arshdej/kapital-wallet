@@ -186,7 +186,6 @@ const HomeScreen: React.FC = () => {
     offerings: Offering[],
     currencyRoute: string[]
   ) => {
-    console.log({ offerings });
     setSelectedOffering(offerings);
     setSendPayload({ currencyRoute: currencyRoute || [] });
     const requiredCredentials = offerings.flatMap(

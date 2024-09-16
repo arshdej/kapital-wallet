@@ -208,7 +208,6 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
       if (!receivedQuote) {
         throw new Error("Failed to receive quote");
       }
-      console.log({ receivedQuote });
       setQuote(receivedQuote);
       setStep("quote");
 

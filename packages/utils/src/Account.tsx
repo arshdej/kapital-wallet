@@ -47,7 +47,12 @@ export class Account {
     if (this.isLocked()) {
       throw new Error("Account is locked. Please unlock first.");
     }
+    this.refresh();
     return this.web5;
+  }
+
+  public async refresh() {
+    this.lastAccess = new Date();
   }
 
   public async unlock(password: string): Promise<boolean> {
