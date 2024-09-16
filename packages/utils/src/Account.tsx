@@ -58,6 +58,7 @@ export class Account {
   public async unlock(password: string): Promise<boolean> {
     try {
       await this.wallet.initialize(password);
+      await this.wallet.initializeDid();
       this.lastAccess = new Date();
       return true;
     } catch {
@@ -75,7 +76,6 @@ export class Account {
 
   public lock(): void {
     this.wallet.lock();
-    this.web5 = null;
   }
 
   public async signTransaction(transaction: any): Promise<string | null> {

@@ -79,14 +79,20 @@ const ExchangeHistory: React.FC<ExchangeHistoryProps> = ({
   };
 
   const filteredExchanges = useMemo(() => {
-    return exchanges.filter((exchange) => {
-      const matchesStatus =
-        statusFilter === "all" || exchange.status === statusFilter;
-      const matchesSearch = exchange.exchangeId
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      return matchesStatus && matchesSearch;
-    });
+    return exchanges
+      .filter((exchange) => {
+        const matchesStatus =
+          statusFilter === "all" || exchange.status === statusFilter;
+        const matchesSearch = exchange.exchangeId
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        return matchesStatus && matchesSearch;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.rfq.metadata.createdAt);
+        const dateB = new Date(b.rfq.metadata.createdAt);
+        return dateB.getTime() - dateA.getTime(); // Sort in descending order (recent first)
+      });
   }, [exchanges, statusFilter, searchTerm]);
 
   const handleExchangeClick = (exchange: any) => {
