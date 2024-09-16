@@ -173,8 +173,7 @@ const OfferingModal: React.FC<OfferingModalProps> = ({
     setIsLoading(true);
     try {
       const rfq = await createRfq();
-      const exchange = await TbdexHttpClient.createExchange(rfq);
-      console.log({ exchange });
+      await TbdexHttpClient.createExchange(rfq);
       setExchangeId(rfq.exchangeId);
 
       // Poll for quote

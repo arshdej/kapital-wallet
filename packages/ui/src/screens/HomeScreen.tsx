@@ -11,19 +11,13 @@ import {
   DrawerOverlay,
   Flex,
   Heading,
+  HStack,
   IconButton,
-  Input,
   Menu,
   MenuButton,
   MenuItem,
   MenuList,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
+  Select,
   Text,
   useColorModeValue,
   useDisclosure,
@@ -52,6 +46,7 @@ import { LandingPageScreen } from "..";
 import CustomSpinner from "../components/Spinner";
 import { ConversionPath, useSupportedCurrencies } from "../hooks/useOfferings";
 import usePartialState from "../hooks/usePartialState";
+import ExchangeHistory from "./ExchangeHistory";
 import OfferingsDisplay from "./OfferingsDisplay";
 import SendMoneyComponent from "./SendMoneyComponent";
 import UnlockScreen from "./UnlockScreen";
@@ -103,6 +98,7 @@ const HomeScreen: React.FC = () => {
     []
   );
   const [amount, setAmount] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [selectedCredentials, setSelectedCredentials] = useState<
     { id: string; jwt: string; payload?: any }[]
@@ -145,15 +141,10 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     fetchTransactions();
-    fetchCredentials();
   }, [page]);
 
   const fetchTransactions = () => {
     // TODO: abstract this into a hook called useTransactions
-  };
-
-  const fetchCredentials = () => {
-    // TODO: abstract this into a hook called useCredentials
   };
 
   useEffect(() => {
@@ -260,6 +251,18 @@ const HomeScreen: React.FC = () => {
         isClosable: true,
       });
     }
+  };
+
+  const handleContinueExchange = (exchangeData: any) => {
+    console.log("Continuing exchange:", exchangeData);
+    // TODO: Launch the order step instead
+    handleOfferingSelect(
+      [exchangeData.offering],
+      [
+        exchangeData?.offering?.data?.payin?.currencyCode,
+        exchangeData?.offering?.data?.payout?.currencyCode,
+      ]
+    );
   };
 
   if (!account) {
@@ -397,55 +400,43 @@ const HomeScreen: React.FC = () => {
             </Box>
           )}
 
+          {/* Exchange History */}
           <Box bg="white" p={4} borderRadius="md" boxShadow="xl">
-            <Heading as="h2" size="md" mb={2}>
-              Recent Transactions
+            <Heading as="h2" size="md" mb={4}>
+              Exchange History
             </Heading>
-            {/* TODO: SHOW Recent transaction/exchanges and their status, allow to click for details */}
+            <Flex justifyContent="space-between" alignItems="center" mb={4}>
+              <Box as="h2"></Box>
+              <Box as="h2"></Box>
+              <HStack spacing={4} mb={4}>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  placeholder="Filter by status"
+                >
+                  <option value="all">All</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="quoted">Quoted</option>
+                  <option value="in_progress">In Progress</option>
+                </Select>
+                {/* <Input 
+                placeholder="Search by Exchange ID" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Button onClick={() => setSearchTerm('')}>Clear</Button> */}
+              </HStack>
+            </Flex>
+            <ExchangeHistory
+              web5={account.getWeb5()}
+              onContinueExchange={handleContinueExchange}
+              statusFilter={statusFilter}
+              searchTerm={""}
+            />
           </Box>
         </VStack>
       </Container>
-
-      {/* Offering Modal */}
-      <Modal isOpen={isOfferingModalOpen} onClose={onOfferingModalClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Exchange Currency</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={4}>
-              {(selectedOffering || [])?.map((offering, index) => (
-                <Box key={offering.metadata.id}>
-                  <Text>
-                    Step {index + 1}: Exchange{" "}
-                    {offering.data.payin.currencyCode} to{" "}
-                    {offering.data.payout.currencyCode} using{" "}
-                    {offering.metadata.from}
-                  </Text>
-                  <Text>Rate: {offering.data.payoutUnitsPerPayinUnit}</Text>
-                </Box>
-              ))}
-              {/* TODO: Fix this. in step 0, it is fine. but subsequent steps should use amount converted from last step */}
-              <Input
-                placeholder="Amount to exchange"
-                value={sendPayload.baseAmount}
-                onChange={(e) =>
-                  setSendPayload({ baseAmount: Number(e.target.value) })
-                }
-                type="number"
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={handleExchange}>
-              Confirm Exchange
-            </Button>
-            <Button variant="ghost" onClick={onOfferingModalClose}>
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
 
       {/* Credential Modal */}
       <CredentialModal
